@@ -21,6 +21,8 @@ class NewImageUITableViewCell: GenericUITableViewCell {
 
     private var mainImageView: ScaleAspectFitImageView!
     private var refreshTimer: Timer?
+    private var imageOperation: OpenHABHTTPRequestOperation?
+
 
     override init(style: UITableViewCell.CellStyle, reuseIdentifier: String?) {
         super.init(style: style, reuseIdentifier: reuseIdentifier)
@@ -127,9 +129,11 @@ class NewImageUITableViewCell: GenericUITableViewCell {
 
         imageRequest.setAuthCredentials(appData!.openHABUsername, appData!.openHABPassword)
         imageRequest.timeoutInterval = 10.0
-        let imageOperation = OpenHABHTTPRequestOperation(request: imageRequest, delegate: self as? AFRememberingSecurityPolicyDelegate)
 
-        imageOperation.setCompletionBlockWithSuccess({ [weak self] (operation, responseObject) in
+        imageOperation?.cancel()
+        imageOperation = OpenHABHTTPRequestOperation(request: imageRequest, delegate: self as? AFRememberingSecurityPolicyDelegate)
+
+        imageOperation?.setCompletionBlockWithSuccess({ [weak self] (operation, responseObject) in
             if let response = responseObject as? Data {
                 self?.mainImageView?.image = UIImage(data: response)
                 self?.widget?.image = UIImage(data: response)
@@ -139,7 +143,7 @@ class NewImageUITableViewCell: GenericUITableViewCell {
         }, failure: { operation, error in
             os_log("Download failed: %{PUBLIC}@", log: .urlComposition, type: .debug, error.localizedDescription)
         })
-        imageOperation.start()
+        imageOperation?.start()
     }
 
     @objc func refreshImage(_ timer: Timer?) {
